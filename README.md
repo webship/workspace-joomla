@@ -102,6 +102,10 @@ lists. They are for local sites and for tests; the site's own Super User is the 
 account and is never written into a test. `bash cmd-tools-add-users.sh mysite joomla` and
 `bash cmd-tools-cancel-users.sh mysite joomla` add and remove the same list.
 
+The **Users** menu of a project row does not add them: the dashboard reads the user list of a row
+from the DDEV project type, and a Joomla project is a `php` project, because the container tool has
+no type for Joomla. Use the CLI tool or the two commands above.
+
 ### Test a site
 
 ```bash
