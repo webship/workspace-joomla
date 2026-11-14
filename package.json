@@ -1,0 +1,75 @@
+{
+  "name": "@webship.co/workspace-joomla",
+  "version": "1.0.7",
+  "description": "Joomla for Webship Workspace: the builder (`cmd-joomla-project.sh`) and the Joomla CLI tool in every sites folder, the default accounts, the Joomla step pack wired into the testing setup, and two AI agents in the AI Agents folder.",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/webship/workspace-joomla.git"
+  },
+  "files": [
+    "dist/src",
+    "agents",
+    "commands",
+    "features",
+    "scripts",
+    "testing",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
+    "test": "npm run build && node --test dist/tests/*.test.js",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "workspacePlugin": {
+    "name": "joomla",
+    "label": "Joomla",
+    "commands": {
+      "types": [
+        "sites"
+      ],
+      "workspaces": [
+        "dev",
+        "test",
+        "sandboxes",
+        "demos"
+      ],
+      "files": [
+        "commands/cmd-joomla-project.sh",
+        "commands/cmd-tools-joomla-cli.sh"
+      ]
+    },
+    "scripts": {
+      "functions": [
+        "scripts/functions/fun-joomla.sh"
+      ],
+      "args": [
+        "scripts/args/arg-joomla.sh",
+        "scripts/args/arg-joomla-cli.sh"
+      ],
+      "machine": [
+        "testing/site.feature"
+      ]
+    },
+    "ai": {
+      "agents": [
+        "agents/joomla-site-builder.md",
+        "agents/joomla-tester.md"
+      ]
+    },
+    "features": [
+      "features/joomla.feature"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@webship.co/workspace-plugin-api": "^1.0.7",
+    "typescript": "^5.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
