@@ -101,4 +101,5 @@ stack, with the Joomla step pack).
 | The installer page instead of the site | The build ran without `--install`: finish it in the browser, or build again with `--install`. |
 | `Error displaying the error page` or a database error | The project is stopped (`ddev start -y`), or `configuration.php` was replaced: its database values are `db` / `db` / `db` on the host `db`. |
 | The site search finds nothing | The Smart Search index is empty: `--run "finder:index"`. |
+| **Add the test users** in the row's Users menu adds no Joomla account | The menu reads the DDEV project type, and a Joomla project is a `php` project. Use `bash cmd-tools-joomla-cli.sh <name> --add-users` or `bash cmd-tools-add-users.sh <name> joomla`. |
 | `is not a Joomla project` from the CLI tool | The project's docroot has no `cli/joomla.php`: it was not built by this builder. |
