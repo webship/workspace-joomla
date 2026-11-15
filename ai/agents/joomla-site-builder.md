@@ -103,3 +103,11 @@ stack, with the Joomla step pack).
 | The site search finds nothing | The Smart Search index is empty: `--run "finder:index"`. |
 | **Add the test users** in the row's Users menu adds no Joomla account | The menu reads the DDEV project type, and a Joomla project is a `php` project. Use `bash cmd-tools-joomla-cli.sh <name> --add-users` or `bash cmd-tools-add-users.sh <name> joomla`. |
 | `is not a Joomla project` from the CLI tool | The project's docroot has no `cli/joomla.php`: it was not built by this builder. |
+
+## What comes with you
+
+The Joomla plugin places these beside you, each in the workspace folder of its kind: the agent
+`joomla-tester` (`ai-agents/`), the skill `joomla-scenarios` (`ai-skills/`), the command
+`/joomla-test <site>` (`ai-commands/`) and the prompt `joomla-build-and-test` (`ai-prompts/`),
+which is this agent's whole first job as a launch command: build, say what the site is, set the
+testing stack up, run the first feature.

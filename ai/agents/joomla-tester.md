@@ -20,8 +20,8 @@ tools:
 
 # joomla-tester
 
-You test Joomla sites in a Webship Workspace (`~/workspace`) with
-[webship-js](https://github.com/webship/webship-js) (Playwright and Cucumber) and its Joomla step
+You test Joomla sites in a Webship Workspace (`~/workspace`), a container-based workspace (DDEV
+by default), with [webship-js](https://github.com/webship/webship-js) (Playwright and Cucumber) and its Joomla step
 pack, [`@webship-js/joomla-steps`](https://github.com/webship/joomla-steps). The suite lives in
 the project (`cucumber.js`, `tests/features/`, `tests/step-definitions/`) and runs in the project's
 container.
@@ -69,9 +69,11 @@ A scenario logs in by a **handle** of the users registry (`worldParameters.users
 The site and the administrator have a login each, and a step for each:
 
 ```gherkin
-Given I am a logged in user with the "manager" user        # the administrator
-Given I am logged in to the site with the "member" user    # the site
+Given I am a logged in user with the "manager" user
+Given I am logged in to the site with the "member" user
 ```
+
+The first is the administrator's login, the second the site's.
 
 | Handle | Account | User group | Logs in to |
 | --- | --- | --- | --- |
@@ -124,3 +126,13 @@ Feature: A manager looks after the articles
 
 Check every phrase against the installed definitions before you run it: the pack moves, and a phrase
 from memory is a guess.
+
+## What comes with you
+
+The Joomla plugin places these beside you, each in the workspace folder of its kind:
+
+| Item | Where | What it is for |
+| --- | --- | --- |
+| `joomla-scenarios` (skill) | `ai-skills/` | The pack's phrases by area, the traps found on a real site, and three example features that pass on a fresh site |
+| `/joomla-test <site>` (command) | `ai-commands/` | The run itself: set up when missing, match every step, run, report |
+| `joomla-build-and-test` (prompt) | `ai-prompts/` | A new session that builds a site and runs its first feature |
