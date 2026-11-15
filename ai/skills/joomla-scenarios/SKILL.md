@@ -187,8 +187,10 @@ redefined for this platform.
 - **`I check in all items` fails when nothing is checked out.** Assert
   `there should not be checked out items` instead, and check in only after a scenario left a
   form open.
-- **Two phrases of the pack name the platform** (the version and the "running" check). They
-  break the rule below: leave them out of a suite, and read the version with
+- **The version and the generator are values of a step**, not a part of its phrase:
+  `the CMS version should start with "<version>"` reads the System Information page, which is
+  for Super Users only, and `the page generator should contain "<name>"` reads the generator
+  meta tag of the page. Without an account that may open that page, read the version with
   `bash cmd-tools-joomla-cli.sh <site>`.
 
 ## Rules
