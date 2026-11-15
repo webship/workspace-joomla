@@ -19,7 +19,7 @@
 
 # The step pack a Joomla project is tested with, and the release line it is required at.
 readonly JOOMLA_STEPS_PACKAGE='@webship-js/joomla-steps';
-readonly JOOMLA_STEPS_VERSION='^2.1.0';
+readonly JOOMLA_STEPS_VERSION='^2.2.0';
 
 # The release a build falls back on when the latest one cannot be read: the one this plugin was proven on.
 readonly JOOMLA_PROVEN_VERSION='6.2.0';

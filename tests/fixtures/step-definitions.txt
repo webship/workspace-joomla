@@ -1,4 +1,4 @@
-# @webship-js/joomla-steps 2.1.0 and webship-js 2.0.10
+# @webship-js/joomla-steps 2.2.0 and webship-js 2.0.10
 ^a (GET|POST|PUT|PATCH|DELETE) request to "([^"]*)" should have been made$
 ^all cookies are cleared$
 ^a request to "([^"]*)" should have been made$
@@ -303,6 +303,7 @@
 ^the (article|category|menu item|module|plugin|extension|user) "([^"]*)?" should( not)* be (published|unpublished|archived|trashed|featured|unfeatured|enabled|disabled|blocked|checked out)$
 ^(the )*breadcrumb should show "([^"]*)?"$
 ^the "([^"]*)" (button|link|tab|menuitem|checkbox|radio|option) should be visible(?: within (\d+) seconds?)?$
+^the CMS version should( not)* (be|start with) "([^"]*)?"$
 ^(?:the cookie|cookie) "([^"]*)" is set to "([^"]*)"$
 ^the cookie "([^"]*)" is removed$
 ^(the )*"([^"]*)?" element should( not)* contain "([^"]*)?"$
@@ -313,7 +314,6 @@
 ^the focused element should match "([^"]*)"$
 ^the group "([^"]*)?" should have (\d+) enabled users?$
 ^the heading hierarchy should be valid$
-^the Joomla version should( not)* (be|start with) "([^"]*)?"$
 ^(?:the JSON response should have property|the API response should contain property) "([^"]*)"$
 ^(?:the JSON response should have|the API response should have|the JSON property) "([^"]*)" (?:equal to|should be) (.+)$
 ^(?:the JSON response should not have property|the API response should not contain property) "([^"]*)"$
@@ -326,6 +326,7 @@
 ^(?:the )?local storage "([^"]*)" is set to "([^"]*)"$
 ^the network is offline$
 ^the network is online$
+^(?:the )?page generator should( not)* (be|start with|contain) "([^"]*)"$
 ^the page language should be "([^"]*)"$
 ^the page should declare a language$
 ^the page should have a main landmark$
@@ -350,7 +351,6 @@
 ^the rich text editor(?: field "([^"]*)?")? should( not)* contain "([^"]*)?"$
 ^(?:the )?session storage "([^"]*)" is removed$
 ^(?:the )?session storage "([^"]*)" is set to "([^"]*)"$
-^the site should( not)* be running Joomla$
 ^the system time is "([^"]*)"$
 ^the URL "([^"]*)" is blocked$
 ^the URL "([^"]*)" is delayed by (\d+) ?ms$

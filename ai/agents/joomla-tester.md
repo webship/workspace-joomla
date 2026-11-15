@@ -99,7 +99,9 @@ account's username, not the handle.
 - **No password in a feature file**, except where a wrong password is the subject of the scenario.
 - **No platform name in a step phrase.** A step says what a person does or sees: `I am on the login
   page`, `I should see the administrator dashboard`, `I go to the administrator "Users" page`. Never
-  a phrase with the platform's name in it. The same holds for a custom step you write.
+  a phrase with the platform's name in it: the name is a value where a step needs it (`the page
+  generator should contain "Joomla"`, `the CMS version should start with "<version>"`). The same
+  holds for a custom step you write.
 - **No CSS selector and no address in a scenario when a step of the pack says it.** `the
   administrator "Users" page`, not `/administrator/index.php?option=com_users`.
 - **A custom step is the last resort.** Look in the pack and in webship-js first. If one is really
