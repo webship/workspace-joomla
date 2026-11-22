@@ -38,7 +38,8 @@ export function assistantContext(): string {
   return [
     'Joomla (a plugin, @webship.co/workspace-joomla): a Joomla site is built with',
     '`bash cmd-joomla-project.sh <name> --install --add-users` from a sites folder (dev, test, sandboxes, demos),',
-    'in a container like every other project, at https://<name>.ddev.site (the administrator at /administrator).',
+    'in a container like every other project: on DDEV by default, at https://<name>.ddev.site, or with `--runtime docker` or',
+    '`--runtime kubernetes` on Docker Compose or a Kubernetes cluster, at the address the build prints (the administrator at /administrator).',
     '`bash cmd-tools-joomla-cli.sh <name>` says what the site is; `--run "<command>"` runs the Joomla CLI (cli/joomla.php) in it,',
     '`--update` updates the core, `--check` looks for updates, `--add-users` adds the default accounts (one per user group).',
     '`bash cmd-tools-add-users.sh <name> joomla` adds the same accounts.',
@@ -46,7 +47,7 @@ export function assistantContext(): string {
     `For Joomla work, hand over to the agents ${AGENTS.map((a) => `\`${a}\``).join(' and ')}.`,
     `The plugin also places the skill ${SKILLS.map((a) => `\`${a}\``).join(', ')} (the step pack's phrases, by area) in ai-skills/,`,
     `the command ${AI_COMMANDS.map((a) => `\`/${a} <site>\``).join(', ')} in ai-commands/ and the prompt ${PROMPTS.map((a) => `\`${a}\``).join(' and ')} in ai-prompts/.`,
-    'Never run php, composer, npm or mysql on the host for a project.',
+    'The same commands work on every runtime. Never run php, composer, npm or mysql on the host for a project.',
   ].join(' ');
 }
 

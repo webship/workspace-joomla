@@ -37,9 +37,13 @@ bash cmd-joomla-project.sh mysite --install --add-users
 | `--add-users` | With `--install`: the default accounts, one per user group (`administrator`, `manager`, `editor`, `member`). |
 | `--sample-data` | With `--install`: the blog sample data of Joomla (articles, a menu, modules), and the Smart Search index built over it. |
 | `--php-version <x>` | The PHP of the project container (`8.3` by default; Joomla 6 needs 8.3 or later). |
+| `--runtime <name>` | The container runtime to build on: `ddev` (the default), `docker` (Docker Compose), `kubernetes` or `podman`. Without it: `container.runtime` of `core/config/settings.yml`, then DDEV. |
 | `--launch` | Opens the site when it is ready. |
 
-The site answers at `https://<name>.ddev.site`, the administrator at `/administrator`. The code is
+On DDEV the site answers at `https://<name>.ddev.site`, the administrator at `/administrator`. On
+another runtime the address is the one the build prints (`http://127.0.0.1:<port>` on Docker
+Compose, the node's address and a port on Kubernetes), and `bash cmd-tools-joomla-cli.sh <name>`
+says it again: never write a `ddev.site` address for such a site. The code is
 in the `public/` folder of the project. The builder **deletes a project of the same name first**: a
 build is a clean slate, so never point it at a site somebody still needs. The name is a folder, a
 container project and a host name: short, lowercase, letters and digits.
@@ -62,7 +66,10 @@ bash cmd-tools-joomla-cli.sh mysite --cancel-users                   # and away 
 
 `--run "list"` prints every command the site's Joomla CLI has. Inside the project folder,
 `ddev exec php public/cli/joomla.php <command>` is the same CLI, and `ddev composer`, `ddev npm`,
-`ddev export-db --file=…`, `ddev import-db --file=…` are the tools for everything else.
+`ddev export-db --file=…`, `ddev import-db --file=…` are the tools for everything else. A site on
+another runtime has no `ddev` project: there the same verbs go through the workspace,
+`bash ~/workspace/core/scripts/runtime-verb.sh exec "php public/cli/joomla.php <command>"` from the
+project folder, and the plugin's and the workspace's `cmd-*.sh` work on every runtime as they are.
 
 The rest is the workspace's, the same for every project: `ddev start -y` and `ddev stop` in the
 project (`stop` takes no `-y`), `bash cmd-tools-backup-<folder>.sh <name>`,
@@ -99,10 +106,10 @@ stack, with the Joomla step pack).
 | `The Joomla <x> package could not be downloaded or unpacked` | No network in the container, or a version that does not exist: `--version latest` proves which. |
 | `Joomla asks for a password of 12 characters or more` | The workspace account's password is too short for Joomla: it is changed in `core/config/settings.yml`, by its owner. |
 | The installer page instead of the site | The build ran without `--install`: finish it in the browser, or build again with `--install`. |
-| `Error displaying the error page` or a database error | The project is stopped (`ddev start -y`), or `configuration.php` was replaced: its database values are `db` / `db` / `db` on the host `db`. |
+| `Error displaying the error page` or a database error | The project is stopped (`ddev start -y`; on another runtime the row's Start), or `configuration.php` was replaced: its database values are `db` / `db` / `db` on the host `db`. |
 | The site search finds nothing | The Smart Search index is empty: `--run "finder:index"`. |
-| **Add the test users** in the row's Users menu adds no Joomla account | The menu reads the DDEV project type, and a Joomla project is a `php` project. Use `bash cmd-tools-joomla-cli.sh <name> --add-users` or `bash cmd-tools-add-users.sh <name> joomla`. |
-| `is not a Joomla project` from the CLI tool | The project's docroot has no `cli/joomla.php`: it was not built by this builder. |
+| **Add the test users** in the row's Users menu adds no Joomla account | On DDEV the menu reads the project type, and a Joomla project is a `php` project. Use `bash cmd-tools-joomla-cli.sh <name> --add-users` or `bash cmd-tools-add-users.sh <name> joomla`. On Docker Compose and Kubernetes the builder claims the project for the plugin, and the row's Tests menu adds them. |
+| `is not a Joomla project` from the CLI tool | The project's docroot has no `cli/joomla.php`, or, on another runtime, its `compose.yaml` does not say `platform: joomla`: it was not built by this builder. |
 
 ## What comes with you
 

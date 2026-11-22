@@ -11,6 +11,13 @@
 # carries the Joomla CLI in its docroot; that file is how the functions here recognise one. The
 # installer is given the container's own database values (db / db / db) and nothing personal.
 #
+# The runtimes: a site is built on DDEV, or with --runtime on Docker Compose, Podman or Kubernetes.
+# The commands are the same on each: `ddev <verb>` is DDEV itself on a DDEV project, and on another
+# runtime the core's layer (fun-runtime.sh) gives the verb its meaning there. What differs is behind
+# joomla_runtime: the address (joomla_url), the claim of the plugin on the project (rt_claim, which
+# is how a project of another runtime is known: joomla_is_project), where the docroot is read from
+# (joomla_docroot) and the .htaccess of the release, which Apache, the web server there, needs.
+#
 # Four names are the ones the core's tools look for:
 #   set_joomla_users        the default accounts          (cmd-tools-add-users.sh <project> joomla)
 #   add_joomla_users        create them with the Joomla CLI (the same tool, and --add-users of the builder)
@@ -42,10 +49,27 @@ function set_joomla_users() {
   done
 }
 
-# The docroot of a project, from its own container configuration.
+# The runtime of the project in this folder, or of a new build (--runtime, else the workspace's
+# setting, else DDEV). A core without the runtime layer has DDEV only.
+function joomla_runtime() {
+  if declare -f runtime_of > /dev/null ; then runtime_of ; else echo 'ddev' ; fi
+}
+
+# The address of the site in this folder: https://<name>.ddev.site on DDEV, http://127.0.0.1:<port>
+# on Docker Compose and Podman, the node's address and a port on Kubernetes. Asked after `ddev config`.
+function joomla_url() {
+  if declare -f rt_url > /dev/null ; then rt_url ; else echo "https://${PROJECT_NAME}.ddev.site" ; fi
+}
+
+# The docroot of a project, from its own container configuration: .ddev/config.yaml, or, on
+# another runtime, the x-webship block of compose.yaml.
 function joomla_docroot() {
   local project_path="$1" docroot ;
-  docroot="$(grep -E '^docroot:' "${project_path}/.ddev/config.yaml" 2>/dev/null | head -1 | sed -E 's/^docroot:[[:space:]]*//; s/^"(.*)"$/\1/; s/[[:space:]]*$//')" ;
+  if [ ! -f "${project_path}/.ddev/config.yaml" ] && [ -f "${project_path}/compose.yaml" ] ; then
+    docroot="$(sed -n '/^x-webship:/,/^[^ x]/s/^  docroot:[[:space:]]*//p' "${project_path}/compose.yaml" | head -1 | sed -E 's/^"(.*)"$/\1/; s/[[:space:]]*$//')" ;
+  else
+    docroot="$(grep -E '^docroot:' "${project_path}/.ddev/config.yaml" 2>/dev/null | head -1 | sed -E 's/^docroot:[[:space:]]*//; s/^"(.*)"$/\1/; s/[[:space:]]*$//')" ;
+  fi
   printf '%s' "${docroot}" ;
 }
 
@@ -55,9 +79,13 @@ function joomla_cli_path() {
   printf '%s' "${docroot:+${docroot}/}cli/joomla.php" ;
 }
 
-# Is this folder a Joomla project? The Joomla CLI and the administrator in its docroot say so.
+# Is this folder a Joomla project? On Docker Compose, Podman and Kubernetes the claim of the plugin
+# says so (`platform: joomla` in the x-webship block of compose.yaml, written by the builder: the
+# core's rt_is_platform reads it). On DDEV, whose project type for it is `php`, the Joomla CLI and
+# the administrator in its docroot say so, as before.
 function joomla_is_project() {
   local project_path="$1" docroot ;
+  if declare -f rt_is_platform > /dev/null && rt_is_platform "${project_path}" joomla ; then return 0 ; fi
   [ -f "${project_path}/.ddev/config.yaml" ] || return 1 ;
   docroot="$(joomla_docroot "${project_path}")" ;
   [ -f "${project_path}/${docroot:+${docroot}/}cli/joomla.php" ] && [ -d "${project_path}/${docroot:+${docroot}/}administrator" ] ;
@@ -78,7 +106,7 @@ function joomla_enter_project() {
     return 1 ;
   fi
   if ! joomla_is_project "${project_path}" ; then
-    echo "${doc_name}/${PROJECT_NAME} is not a Joomla project (its docroot has no cli/joomla.php)." ;
+    echo "${doc_name}/${PROJECT_NAME} is not a Joomla project (its docroot has no cli/joomla.php, and no plugin claims it in compose.yaml)." ;
     return 1 ;
   fi
   cd "${project_path}" || return 1 ;
@@ -113,7 +141,12 @@ function joomla_latest_version() {
 # Build a Joomla site from nothing: the container, the code, and with --install the site itself.
 function joomla_build() {
   trim_project_name ;
-  local base_url="https://${PROJECT_NAME}.ddev.site" ;
+  local base_url runtime ;
+  runtime="$(joomla_runtime)" ;
+  if [ "${RUNTIME:-_none_}" != '_none_' ] && [ "${RUNTIME}" != "${runtime}" ] ; then
+    echo "--runtime ${RUNTIME} needs a Webship Workspace with the container runtimes (webship/workspace#694): update the workspace, or build on DDEV." ;
+    exit 1 ;
+  fi
   local version="${VERSION:-${site_version:-latest}}" ;
   local php_version="${PHP_VERSION:-${site_php_version:-8.3}}" ;
   local docroot="${distribution_webroot}" ;
@@ -134,13 +167,21 @@ function joomla_build() {
 
   ddev config --project-type=php --docroot="${docroot}" --project-name=${PROJECT_NAME} \
     --php-version=${php_version} --webserver-type=nginx-fpm --nodejs-version=$(ddev_nodejs_version) || exit 1 ;
+  # The project type is `php` on every runtime. On another runtime than DDEV the plugin claims the
+  # project, so the tools and the dashboard know it is a Joomla one; on DDEV this does nothing.
+  if declare -f rt_claim > /dev/null ; then rt_claim joomla || exit 1 ; fi
   ddev_up start -y || exit 1 ;
+  # The address is the runtime's to say, once the project is configured: never a written ddev.site.
+  base_url="$(joomla_url)" ;
 
   [ "${version}" == 'latest' ] && version="$(joomla_latest_version)" ;
   local package="https://github.com/joomla/joomla-cms/releases/download/${version}/Joomla_${version}-Stable-Full_Package.zip" ;
   echo "Downloading Joomla ${version}." ;
   ddev exec "curl -fsSL -o /tmp/joomla.zip '${package}' && unzip -q -o /tmp/joomla.zip -d '/var/www/html/${docroot}' && rm -f /tmp/joomla.zip" \
     || { echo "The Joomla ${version} package could not be downloaded or unpacked." ; exit 1 ; } ;
+  if [ "${runtime}" != 'ddev' ] ; then
+    joomla_runtime_config || { echo "The .htaccess of the release could not be written." ; exit 1 ; } ;
+  fi
 
   if [ "${INSTALL}" == 'yes' ] ; then
     # The container's own database values, the same in every project: nothing personal is written.
@@ -181,6 +222,18 @@ function joomla_build() {
   cd ${WORKSPACE_ROOT}/${doc_name};
 }
 
+# What DDEV does for a Joomla project and another runtime does not. DDEV's web server hands an
+# address that is no file to index.php; the web server of the other runtimes' stack is Apache, which
+# does so from the .htaccess the release carries as htaccess.txt. A file that is already there is
+# left as it is. The database needs nothing: the installer is given db / db / db on the host db on
+# every runtime. Never called on DDEV.
+function joomla_runtime_config() {
+  local web="${distribution_webroot:+${distribution_webroot}/}" ;
+  [ -f "${web}.htaccess" ] && return 0 ;
+  [ -f "${web}htaccess.txt" ] || return 0 ;
+  cp "${web}htaccess.txt" "${web}.htaccess" ;
+}
+
 # The "blog" sample data of Joomla: articles, a menu and the modules that show them. Joomla
 # offers it through the administrator only, so the container logs in as the workspace account,
 # the way a browser would, and asks for each of its four steps in order; then the Smart Search
@@ -188,9 +241,14 @@ function joomla_build() {
 # environment for that one command and is written nowhere.
 function joomla_sample_data() {
   echo "Adding the blog sample data." ;
-  ddev exec "JOOMLA_USER=$(printf '%q' "${account_name}") JOOMLA_PASSWORD=$(printf '%q' "${account_pass}") bash -s" <<'SAMPLEEOF' || { echo "  The sample data could not be added; the site itself is installed." ; return 1 ; } ;
+  # On DDEV the container knows its own address (DDEV_PRIMARY_URL). On another runtime it is given
+  # the one the runtime says, which the site reaches from inside its container too.
+  local site_address='' ;
+  [ "$(joomla_runtime)" != 'ddev' ] && site_address="JOOMLA_SITE=$(printf '%q' "$(joomla_url)") " ;
+  ddev exec "${site_address}JOOMLA_USER=$(printf '%q' "${account_name}") JOOMLA_PASSWORD=$(printf '%q' "${account_pass}") bash -s" <<'SAMPLEEOF' || { echo "  The sample data could not be added; the site itself is installed." ; return 1 ; } ;
 set -e
-site="${DDEV_PRIMARY_URL%/}"
+site="${JOOMLA_SITE:-${DDEV_PRIMARY_URL}}"
+site="${site%/}"
 jar="$(mktemp)"
 trap 'rm -f "${jar}"' EXIT
 admin="${site}/administrator/index.php"
@@ -283,7 +341,7 @@ function joomla_cli_tool() {
     set_joomla_users ;
     cancel_joomla_users ;
   else
-    echo "${doc_name}/${PROJECT_NAME}: $(joomla_cli --version 2>/dev/null | head -1) at https://${PROJECT_NAME}.ddev.site" ;
+    echo "${doc_name}/${PROJECT_NAME}: $(joomla_cli --version 2>/dev/null | head -1) at $(joomla_url)" ;
     if joomla_is_installed "$(pwd)" ; then
       echo "" ; echo "Accounts:" ; joomla_cli user:list --no-interaction ;
     else

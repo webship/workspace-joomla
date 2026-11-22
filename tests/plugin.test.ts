@@ -54,6 +54,10 @@ test('the functions carry the names the core\'s tools look for, and give the ins
   assert.doesNotMatch(src, /--db-(host|user|pass|name)=(?!db )/, 'and no other');
   assert.match(src, /--nodejs-version=\$\(ddev_nodejs_version\)/, 'the build runs the Node.js of the workspace rule');
   assert.doesNotMatch(src, /ddev stop -y/, 'ddev stop takes no -y');
+  // The runtimes: the address is the runtime's to say, and the layer chooses the tool.
+  assert.doesNotMatch(src.replace(/^\s*#.*$/gm, '').replace(/echo "https:\/\/\$\{PROJECT_NAME\}\.ddev\.site"/, ''), /ddev\.site/, 'ddev.site only as the answer of a core with no layer');
+  assert.doesNotMatch(src.replace(/^\s*#.*$/gm, ''), /\b(docker|podman|kubectl) |command ddev/, 'only `ddev <verb>`: the layer chooses');
+  assert.match(src, /if \[ "\$\{runtime\}" != 'ddev' \] ; then\n    joomla_runtime_config \|\| /, 'the .htaccess is never written on DDEV');
 });
 
 test('each agent is a definition the AI Agents folder can list: named after its file, described, on the fable model', () => {
