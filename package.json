@@ -83,8 +83,10 @@
       ]
     },
     "features": [
-      "features/joomla.feature"
-    ]
+      "features/joomla.feature",
+      "features/joomla-runtimes.feature"
+    ],
+    "featuresSite": "cmd-joomla-project.sh ci-joomla --install --add-users --runtime docker"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

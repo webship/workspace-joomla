@@ -8,6 +8,7 @@ each listed in the workspace folder of its kind.
 
 The workspace is container-based (DDEV by default): a Joomla project is a row like any other, so
 the row menus the core draws (start, stop, launch, backup, clone, remove, tests) work on it unchanged.
+A site is also built on Docker Compose or on a Kubernetes cluster: see [Runtimes](#runtimes).
 
 It is made from the reference platform plugin,
 [`@webship.co/workspace-wordpress`](https://github.com/webship/workspace-wordpress).
@@ -75,6 +76,7 @@ A workspace that knows none of this (Webship Workspace 1.0.8 and older) ignores 
 | `docs/plugin-items-pattern.md` | How a plugin carries its own commands and AI items, and how to prove it |
 | `src/index.ts` | `register(api)`: what the assistant is told about Joomla here |
 | `features/joomla.feature` | Scenarios for the dashboard's own browser suite |
+| `features/joomla-runtimes.feature` | The row, the test users and the pages of a Joomla site built on Docker Compose and on Kubernetes |
 
 The `workspacePlugin` block in `package.json` is the manifest the installer reads.
 
@@ -96,9 +98,10 @@ bash cmd-joomla-project.sh mysite --install --add-users
 | `--add-users` | With `--install`: add the default accounts, one per user group |
 | `--sample-data` | With `--install`: add the blog sample data of Joomla, and build the Smart Search index over it |
 | `--php-version <x>` | The PHP of the project container (`8.3`) |
+| `--runtime <name>` | The container runtime to build on: `ddev` (the default), `docker`, `kubernetes` or `podman`. See [Runtimes](#runtimes) |
 | `--launch` | Open the site when it is ready |
 
-The site answers at `https://mysite.ddev.site`, the administrator at `/administrator`. The container
+On DDEV the site answers at `https://mysite.ddev.site`, the administrator at `/administrator`. The container
 tool has no project type for Joomla, so the build runs `ddev config --project-type=php` with the
 docroot `public` and the Node.js of the workspace (24), downloads the full package of the release
 and unpacks it in the container, and installs with Joomla's own command-line installer. The
@@ -107,6 +110,58 @@ and nothing personal. A project of the same name is deleted first.
 
 Joomla refuses a password shorter than 12 characters: `--install` stops before it starts when the
 workspace account's is shorter.
+
+### Runtimes
+
+```bash
+bash cmd-joomla-project.sh mysite --install --add-users                        # DDEV, the default
+bash cmd-joomla-project.sh mysite --install --add-users --runtime docker       # Docker Compose
+bash cmd-joomla-project.sh mysite --install --add-users --runtime kubernetes   # a Kubernetes cluster
+```
+
+Without `--runtime` a build takes `container.runtime` of the workspace's `settings.yml`, then DDEV.
+It needs a Webship Workspace with the container runtimes
+([webship/workspace#694](https://github.com/webship/workspace/issues/694)); on an older one the
+builder refuses `--runtime` and builds on DDEV only.
+
+| | DDEV | Docker Compose | Kubernetes | Podman |
+| --- | --- | --- | --- | --- |
+| Build and install, with the default accounts and the sample data | Yes | Yes | The same code as Docker Compose, not yet run | The same code as Docker Compose, not yet run |
+| The front page and the administrator | Yes | Yes | The same code as Docker Compose, not yet run | Not yet run |
+| `cmd-tools-joomla-cli.sh`: what the site is, `--run`, `--check` | Yes | Yes | The same code as Docker Compose, not yet run | Not yet run |
+| Test users, added and cancelled | Yes | Yes | The same code as Docker Compose, not yet run | Not yet run |
+| The testing setup and the suite (`cmd-tools-testing.sh`, `--run`) | Yes | Yes | The same code as Docker Compose, not yet run | Not yet run |
+| Mail caught by Mailpit | Yes | Yes | The same code as Docker Compose, not yet run | Not yet run |
+| Export and import the database | Yes | Yes | The same code as Docker Compose, not yet run | Not yet run |
+| The row in the dashboard, and remove | Yes | Yes | The same code as Docker Compose, not yet run | Not yet run |
+
+"Yes" means it was run on a real site of that runtime.
+
+| Runtime | The site's address | What the project carries |
+| --- | --- | --- |
+| DDEV | `https://mysite.ddev.site` | `.ddev/config.yaml`, the project type `php` |
+| Docker Compose | `http://127.0.0.1:<port>`, printed by the build | `compose.yaml`, `.webship/runtime/Dockerfile` |
+| Kubernetes | `http://<node address>:<port>`, printed by the build | The same, and `k8s/` (the namespace `ws-mysite`) |
+
+What differs on Docker Compose and Kubernetes:
+
+- **The claim:** the project type is `php` there too, so the builder writes `platform: joomla` in the
+  `x-webship:` block of `compose.yaml`. That is how the tools know a Joomla project there, and why
+  the row's Tests menu offers **Add the test users** and **Cancel the test users**.
+- **The web server** is Apache, so the builder copies the release's `htaccess.txt` to `.htaccess`,
+  as Joomla asks for on Apache. A `.htaccess` that is already there is kept. On DDEV it writes none.
+- **The database** needs nothing new: the installer is given `db` / `db` / `db` on the host `db`,
+  which the stack of every runtime has.
+- **The address:** Joomla keeps none, so the same site answers on its port, on the node of a
+  cluster and through a tunnel.
+- **The suite** runs in the Workspace's tests container, against the site's address.
+- **Not there yet:** captured mail has no page in a browser (Mailpit is reached from the web
+  container). HTTPS and a host name are DDEV's. Podman runs the same code as Docker Compose and was
+  not run yet.
+
+The same commands work on every runtime: `cmd-tools-joomla-cli.sh`, `cmd-tools-add-users.sh`,
+`cmd-tools-testing.sh`. The pattern is the reference plugin's:
+[On Docker Compose and Kubernetes](https://github.com/webship/workspace-wordpress/blob/1.0.x/docs/cms-plugin-pattern.md#on-docker-compose-and-kubernetes).
 
 ### Work on a site
 
@@ -134,9 +189,11 @@ lists. They are for local sites and for tests; the site's own Super User is the 
 account and is never written into a test. `bash cmd-tools-add-users.sh mysite joomla` and
 `bash cmd-tools-cancel-users.sh mysite joomla` add and remove the same list.
 
-The **Users** menu of a project row does not add them: the dashboard reads the user list of a row
-from the DDEV project type, and a Joomla project is a `php` project, because the container tool has
-no type for Joomla. Use the CLI tool or the two commands above.
+On DDEV the **Users** menu of a project row does not add them: the dashboard reads the user list of
+a row from the DDEV project type, and a Joomla project is a `php` project, because the container
+tool has no type for Joomla. Use the CLI tool or the two commands above. On Docker Compose and
+Kubernetes the builder claims the project for the plugin, so the row's Tests menu adds and cancels
+them.
 
 ### Test a site
 
